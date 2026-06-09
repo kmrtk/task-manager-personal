@@ -51,6 +51,69 @@
 | チェックリスト | カード内サブタスク |
 | 優先度 | 手動設定・緑/青/茶色/オレンジ/紫/黒/白から選択 |
 
+### ER図
+
+```mermaid
+erDiagram
+    ボード {
+        int ID PK
+        string 名前
+        datetime 作成日時
+    }
+    カラム {
+        int ID PK
+        int ボードID FK
+        string 名前
+        int 並び順
+        datetime 作成日時
+    }
+    カード {
+        int ID PK
+        int カラムID FK
+        string タイトル
+        string 説明
+        date 期限日
+        string 優先度
+        boolean 完了フラグ
+        boolean 削除フラグ
+        datetime 作成日時
+    }
+    ラベル {
+        int ID PK
+        string 名前
+        string 色
+    }
+    カードラベル {
+        int カードID FK
+        int ラベルID FK
+    }
+    コメント {
+        int ID PK
+        int カードID FK
+        string 内容
+        datetime 作成日時
+    }
+    チェックリスト {
+        int ID PK
+        int カードID FK
+        string タイトル
+    }
+    チェックリスト項目 {
+        int ID PK
+        int チェックリストID FK
+        string 内容
+        boolean チェック済み
+    }
+
+    ボード ||--o{ カラム : ""
+    カラム ||--o{ カード : ""
+    カード ||--o{ コメント : ""
+    カード ||--o{ チェックリスト : ""
+    チェックリスト ||--o{ チェックリスト項目 : ""
+    カード ||--o{ カードラベル : ""
+    ラベル ||--o{ カードラベル : ""
+```
+
 ---
 
 ## ④ 機能要件
