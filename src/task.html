@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タスク詳細</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <a href="javascript:history.back()" class="btn-back">←</a>
+    <div class="page-title">タスク詳細</div>
+  </header>
+
+  <!-- タスク詳細 -->
+  <main class="task-detail">
+    <div class="task-detail-card">
+
+      <!-- タスク名 -->
+      <input type="text" class="task-title-input" id="taskTitle" placeholder="タスク名">
+
+      <!-- 期限 -->
+      <div class="detail-section">
+        <label>期限</label>
+        <input type="date" id="taskDeadline">
+      </div>
+
+      <!-- 優先度 -->
+      <div class="detail-section">
+        <label>優先度</label>
+        <div class="priority-options" id="priorityOptions">
+          <div class="priority-option" data-value="">
+            <span class="dot" style="background:#dfe1e6"></span> なし
+          </div>
+          <div class="priority-option" data-value="red">
+            <span class="dot" style="background:#eb5a46"></span> 高
+          </div>
+          <div class="priority-option" data-value="orange">
+            <span class="dot" style="background:#ff9f1a"></span> 中
+          </div>
+          <div class="priority-option" data-value="green">
+            <span class="dot" style="background:#61bd4f"></span> 低
+          </div>
+          <div class="priority-option" data-value="blue">
+            <span class="dot" style="background:#0079bf"></span> 情報
+          </div>
+          <div class="priority-option" data-value="purple">
+            <span class="dot" style="background:#c377e0"></span> 確認
+          </div>
+        </div>
+      </div>
+
+      <!-- タグ -->
+      <div class="detail-section">
+        <label>タグ</label>
+        <div class="tag-container" id="tagContainer">
+          <select class="tag-select" id="tagSelect">
+            <option value="">＋ タグを追加</option>
+            <option value="急ぎ">急ぎ</option>
+            <option value="重要">重要</option>
+            <option value="確認待ち">確認待ち</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- メモ -->
+      <div class="detail-section">
+        <label>メモ</label>
+        <textarea class="memo-input" id="taskMemo" placeholder="メモを入力..." rows="4"></textarea>
+      </div>
+
+      <!-- チェックリスト -->
+      <div class="detail-section">
+        <label>チェックリスト</label>
+        <div class="checklist-items" id="checklistItems"></div>
+        <div class="add-checklist-form">
+          <input type="text" id="checklistInput" placeholder="項目を追加">
+          <button class="btn btn-ghost" id="addChecklistBtn">追加</button>
+        </div>
+      </div>
+
+      <!-- アクション -->
+      <div class="task-actions">
+        <button class="btn btn-danger" id="trashBtn">🗑️ ゴミ箱に移動</button>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const tagColors = {
+      '急ぎ': '#eb5a46',
+      '重要': '#0079bf',
+      '確認待ち': '#f2d600',
+    };
+
+    // sessionStorageからタスクデータを取得（なければデモデータ）
+    const raw = sessionStorage.getItem('currentTask');
+    const task = raw ? JSON.parse(raw) : {
+      id: 999,
+      title: 'サンプルタスク',
+      deadline: '',
+      priority: '',
+      tags: [],
+    };
+
+    // フィールドを初期化
+    document.getElementById('taskTitle').value = task.title || '';
+    document.getElementById('taskDeadline').value = task.deadline || '';
+    document.getElementById('taskMemo').value = task.memo || '';
+
+    // 優先度
+    let selectedPriority = task.priority || '';
+    const priorityOptions = document.querySelectorAll('.priority-option');
+    function updatePriorityUI() {
+      priorityOptions.forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.value === selectedPriority);
+      });
+    }
+    priorityOptions.forEach(opt => {
+      opt.addEventListener('click', () => {
+        selectedPriority = opt.dataset.value;
+        updatePriorityUI();
+      });
+    });
+    updatePriorityUI();
+
+    // タグ
+    const appliedTags = [...(task.tags || [])];
+    const tagContainer = document.getElementById('tagContainer');
+    const tagSelect = document.getElementById('tagSelect');
+
+    function renderTags() {
+      // タグチップを再描画（selectは残す）
+      tagContainer.querySelectorAll('.tag-item').forEach(el => el.remove());
+      appliedTags.forEach(tag => {
+        const chip = document.createElement('div');
+        chip.className = 'tag-item';
+        chip.style.background = tagColors[tag] || '#5e6c84';
+        chip.innerHTML = `${tag} <button data-tag="${tag}">×</button>`;
+        chip.querySelector('button').addEventListener('click', () => {
+          const idx = appliedTags.indexOf(tag);
+          if (idx > -1) appliedTags.splice(idx, 1);
+          renderTags();
+        });
+        tagContainer.insertBefore(chip, tagSelect);
+      });
+    }
+
+    tagSelect.addEventListener('change', () => {
+      const val = tagSelect.value;
+      if (val && !appliedTags.includes(val)) {
+        appliedTags.push(val);
+        renderTags();
+      }
+      tagSelect.value = '';
+    });
+
+    renderTags();
+
+    // チェックリスト
+    const checklist = task.checklist ? [...task.checklist] : [
+      { text: 'サンプル項目1', checked: false },
+      { text: 'サンプル項目2', checked: true },
+    ];
+    const checklistContainer = document.getElementById('checklistItems');
+
+    function renderChecklist() {
+      checklistContainer.innerHTML = '';
+      checklist.forEach((item, idx) => {
+        const el = document.createElement('div');
+        el.className = 'checklist-item';
+        el.innerHTML = `
+          <input type="checkbox" ${item.checked ? 'checked' : ''}>
+          <span class="${item.checked ? 'checked' : ''}">${item.text}</span>
+          <button class="delete-item">×</button>
+        `;
+        el.querySelector('input').addEventListener('change', (e) => {
+          item.checked = e.target.checked;
+          renderChecklist();
+        });
+        el.querySelector('.delete-item').addEventListener('click', () => {
+          checklist.splice(idx, 1);
+          renderChecklist();
+        });
+        checklistContainer.appendChild(el);
+      });
+    }
+
+    document.getElementById('addChecklistBtn').addEventListener('click', () => {
+      const input = document.getElementById('checklistInput');
+      const text = input.value.trim();
+      if (!text) return;
+      checklist.push({ text, checked: false });
+      input.value = '';
+      renderChecklist();
+    });
+
+    document.getElementById('checklistInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('addChecklistBtn').click();
+    });
+
+    renderChecklist();
+
+    // ゴミ箱に移動
+    document.getElementById('trashBtn').addEventListener('click', () => {
+      if (confirm('このタスクをゴミ箱に移動しますか？')) {
+        const trash = JSON.parse(sessionStorage.getItem('trash') || '[]');
+        trash.push({ ...task, title: document.getElementById('taskTitle').value || task.title });
+        sessionStorage.setItem('trash', JSON.stringify(trash));
+        history.back();
+      }
+    });
+  </script>
+</body>
+</html>

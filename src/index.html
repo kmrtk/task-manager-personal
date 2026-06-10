@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タスク管理アプリ</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <h1>📋 タスク管理</h1>
+    <a href="settings.html" class="btn btn-secondary">⚙️ 設定</a>
+  </header>
+
+  <!-- フォルダ一覧 -->
+  <main class="folders-container" id="foldersContainer">
+    <!-- フォルダカードはJSで生成 -->
+  </main>
+
+  <script>
+    // 初期フォルダデータ
+    const folders = [
+      { id: 1, name: '仕事', icon: '💼' },
+      { id: 2, name: '趣味', icon: '🎮' },
+      { id: 3, name: 'プライベート', icon: '🏠' },
+    ];
+
+    const container = document.getElementById('foldersContainer');
+
+    function renderFolders() {
+      container.innerHTML = '';
+      folders.forEach(folder => {
+        container.appendChild(createFolderCard(folder));
+      });
+      container.appendChild(createAddButton());
+    }
+
+    function createFolderCard(folder) {
+      const card = document.createElement('div');
+      card.className = 'folder-card';
+      card.dataset.id = folder.id;
+      card.innerHTML = `
+        <button class="delete-folder" title="削除">×</button>
+        <div class="folder-icon">${folder.icon}</div>
+        <div class="folder-name">${folder.name}</div>
+      `;
+
+      // フォルダをクリック → フォルダ画面へ
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-folder')) return;
+        if (e.target.tagName === 'INPUT') return;
+        location.href = `folder.html?name=${encodeURIComponent(folder.name)}&id=${folder.id}`;
+      });
+
+      // フォルダ名ダブルクリック → インライン編集
+      card.querySelector('.folder-name').addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const nameEl = card.querySelector('.folder-name');
+        const current = nameEl.textContent;
+        const input = document.createElement('input');
+        input.className = 'edit-input';
+        input.value = current;
+        nameEl.replaceWith(input);
+        input.focus();
+
+        const save = () => {
+          const newName = input.value.trim() || current;
+          folder.name = newName;
+          const newNameEl = document.createElement('div');
+          newNameEl.className = 'folder-name';
+          newNameEl.textContent = newName;
+          newNameEl.addEventListener('dblclick', arguments.callee);
+          input.replaceWith(newNameEl);
+        };
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') save();
+          if (e.key === 'Escape') {
+            const nameEl = document.createElement('div');
+            nameEl.className = 'folder-name';
+            nameEl.textContent = current;
+            input.replaceWith(nameEl);
+          }
+        });
+      });
+
+      // 削除ボタン
+      card.querySelector('.delete-folder').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`「${folder.name}」を削除しますか？`)) {
+          const idx = folders.findIndex(f => f.id === folder.id);
+          folders.splice(idx, 1);
+          renderFolders();
+        }
+      });
+
+      return card;
+    }
+
+    function createAddButton() {
+      const wrapper = document.createElement('div');
+
+      const btn = document.createElement('button');
+      btn.className = 'add-folder-btn';
+      btn.innerHTML = '＋ フォルダを追加';
+      wrapper.appendChild(btn);
+
+      const form = document.createElement('div');
+      form.className = 'add-folder-form';
+      form.style.display = 'none';
+      form.innerHTML = `
+        <input type="text" placeholder="フォルダ名を入力" maxlength="30">
+        <div class="form-actions">
+          <button class="btn btn-primary btn-add">追加</button>
+          <button class="btn-cancel">×</button>
+        </div>
+      `;
+      wrapper.appendChild(form);
+
+      btn.addEventListener('click', () => {
+        btn.style.display = 'none';
+        form.style.display = 'block';
+        form.querySelector('input').focus();
+      });
+
+      const addFolder = () => {
+        const name = form.querySelector('input').value.trim();
+        if (!name) return;
+        const icons = ['📁', '⭐', '🔥', '📌', '🎯', '💡'];
+        folders.push({
+          id: Date.now(),
+          name,
+          icon: icons[Math.floor(Math.random() * icons.length)]
+        });
+        renderFolders();
+      };
+
+      form.querySelector('.btn-add').addEventListener('click', addFolder);
+      form.querySelector('input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addFolder();
+        if (e.key === 'Escape') {
+          form.style.display = 'none';
+          btn.style.display = 'flex';
+        }
+      });
+      form.querySelector('.btn-cancel').addEventListener('click', () => {
+        form.style.display = 'none';
+        btn.style.display = 'flex';
+      });
+
+      return wrapper;
+    }
+
+    renderFolders();
+  </script>
+</body>
+</html>

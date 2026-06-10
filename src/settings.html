@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設定</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <a href="javascript:history.back()" class="btn-back">←</a>
+    <div class="page-title">設定</div>
+  </header>
+
+  <main class="settings-container">
+
+    <!-- タグ管理 -->
+    <section class="settings-section">
+      <h2>🏷️ タグ管理</h2>
+      <div class="tags-list" id="tagsList"></div>
+      <div class="add-tag-form">
+        <input type="text" id="tagNameInput" placeholder="タグ名" maxlength="20">
+        <input type="color" id="tagColorInput" value="#0079bf" title="色を選択">
+        <button class="btn btn-primary" id="addTagBtn">追加</button>
+      </div>
+    </section>
+
+    <!-- ゴミ箱 -->
+    <section class="settings-section">
+      <h2>🗑️ ゴミ箱</h2>
+      <div class="trash-list" id="trashList"></div>
+    </section>
+
+  </main>
+
+  <script>
+    // タグデータ
+    const tags = [
+      { name: '急ぎ', color: '#eb5a46' },
+      { name: '重要', color: '#0079bf' },
+      { name: '確認待ち', color: '#f2d600' },
+    ];
+
+    // ゴミ箱データ（sessionStorageから取得）
+    let trashItems = JSON.parse(sessionStorage.getItem('trash') || '[]');
+
+    function renderTags() {
+      const list = document.getElementById('tagsList');
+      list.innerHTML = '';
+      if (tags.length === 0) {
+        list.innerHTML = '<p class="empty-message">タグがありません</p>';
+        return;
+      }
+      tags.forEach((tag, idx) => {
+        const el = document.createElement('div');
+        el.className = 'tag-manage-item';
+        el.style.background = tag.color;
+        el.innerHTML = `${tag.name} <button data-idx="${idx}">×</button>`;
+        el.querySelector('button').addEventListener('click', () => {
+          if (confirm(`タグ「${tag.name}」を削除しますか？`)) {
+            tags.splice(idx, 1);
+            renderTags();
+          }
+        });
+        list.appendChild(el);
+      });
+    }
+
+    document.getElementById('addTagBtn').addEventListener('click', () => {
+      const name = document.getElementById('tagNameInput').value.trim();
+      const color = document.getElementById('tagColorInput').value;
+      if (!name) return;
+      if (tags.some(t => t.name === name)) {
+        alert('同じ名前のタグがすでに存在します');
+        return;
+      }
+      tags.push({ name, color });
+      document.getElementById('tagNameInput').value = '';
+      renderTags();
+    });
+
+    document.getElementById('tagNameInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('addTagBtn').click();
+    });
+
+    function renderTrash() {
+      const list = document.getElementById('trashList');
+      list.innerHTML = '';
+      if (trashItems.length === 0) {
+        list.innerHTML = '<p class="empty-message">ゴミ箱は空です</p>';
+        return;
+      }
+      trashItems.forEach((item, idx) => {
+        const el = document.createElement('div');
+        el.className = 'trash-item';
+        el.innerHTML = `
+          <span class="trash-title">📄 ${item.title}</span>
+          <button class="btn-restore" data-idx="${idx}">復元</button>
+          <button class="btn-delete-permanent" data-idx="${idx}">完全削除</button>
+        `;
+        el.querySelector('.btn-restore').addEventListener('click', () => {
+          alert(`「${item.title}」を復元しました。\n（プロトタイプのため元のグループには戻りません）`);
+          trashItems.splice(idx, 1);
+          sessionStorage.setItem('trash', JSON.stringify(trashItems));
+          renderTrash();
+        });
+        el.querySelector('.btn-delete-permanent').addEventListener('click', () => {
+          if (confirm(`「${item.title}」を完全に削除しますか？`)) {
+            trashItems.splice(idx, 1);
+            sessionStorage.setItem('trash', JSON.stringify(trashItems));
+            renderTrash();
+          }
+        });
+        list.appendChild(el);
+      });
+    }
+
+    renderTags();
+    renderTrash();
+  </script>
+</body>
+</html>

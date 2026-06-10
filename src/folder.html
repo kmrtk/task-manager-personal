@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>フォルダ画面</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body class="board-bg">
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <a href="index.html" class="btn-back">←</a>
+    <div class="page-title" id="folderTitle">フォルダ</div>
+    <a href="settings.html" class="btn btn-secondary">⚙️ 設定</a>
+  </header>
+
+  <!-- ボード -->
+  <main class="board-container" id="boardContainer">
+    <!-- グループはJSで生成 -->
+  </main>
+
+  <script>
+    // URLパラメータからフォルダ名を取得
+    const params = new URLSearchParams(location.search);
+    const folderName = params.get('name') || 'フォルダ';
+    document.getElementById('folderTitle').textContent = folderName;
+    document.title = folderName;
+
+    // ゴミ箱データ（settings.htmlと共有のためsessionStorageを使用）
+    const trashItems = JSON.parse(sessionStorage.getItem('trash') || '[]');
+
+    // 初期グループ・タスクデータ
+    const groups = [
+      {
+        id: 1, name: '未着手',
+        tasks: [
+          { id: 101, title: 'デザイン案を確認する', deadline: '', priority: '', tags: [] },
+          { id: 102, title: 'ミーティングの議事録をまとめる', deadline: '2026-06-20', priority: 'orange', tags: ['急ぎ'] },
+        ]
+      },
+      {
+        id: 2, name: '進行中',
+        tasks: [
+          { id: 103, title: 'プロトタイプを作成する', deadline: '2026-06-15', priority: 'red', tags: ['重要'] },
+        ]
+      },
+      {
+        id: 3, name: '完了',
+        tasks: [
+          { id: 104, title: '要件定義書を作成する', deadline: '', priority: 'green', tags: [] },
+        ]
+      },
+    ];
+
+    const tagColors = {
+      '急ぎ': '#eb5a46',
+      '重要': '#0079bf',
+      '確認待ち': '#f2d600',
+    };
+
+    const priorityColors = {
+      red: '#eb5a46',
+      orange: '#ff9f1a',
+      green: '#61bd4f',
+      blue: '#0079bf',
+      purple: '#c377e0',
+    };
+
+    let nextTaskId = 200;
+    const board = document.getElementById('boardContainer');
+
+    function today() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function getDeadlineClass(deadline) {
+      if (!deadline) return '';
+      const diff = (new Date(deadline) - new Date(today())) / (1000 * 60 * 60 * 24);
+      if (diff < 0) return 'overdue';
+      if (diff <= 7) return 'soon';
+      return '';
+    }
+
+    function renderBoard() {
+      board.innerHTML = '';
+      groups.forEach(group => board.appendChild(createGroupColumn(group)));
+      board.appendChild(createAddGroupColumn());
+    }
+
+    function createGroupColumn(group) {
+      const col = document.createElement('div');
+      col.className = 'group-column';
+      col.dataset.id = group.id;
+
+      col.innerHTML = `
+        <div class="group-header">
+          <div class="group-name" title="ダブルクリックで編集">${group.name}</div>
+          <button class="delete-group-btn" title="グループを削除">×</button>
+        </div>
+        <div class="task-list" id="tasks-${group.id}"></div>
+        <button class="add-task-btn">＋ タスクを追加</button>
+        <div class="add-task-form" style="display:none">
+          <textarea placeholder="タスク名を入力" rows="2"></textarea>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-add-task">追加</button>
+            <button class="btn-cancel">×</button>
+          </div>
+        </div>
+      `;
+
+      // タスクを描画
+      const taskList = col.querySelector(`#tasks-${group.id}`);
+      group.tasks.forEach(task => taskList.appendChild(createTaskCard(task, group)));
+
+      // Sortable（ドラッグ＆ドロップ）
+      Sortable.create(taskList, {
+        group: 'tasks',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd(evt) {
+          const taskId = parseInt(evt.item.dataset.id);
+          const fromGroupId = parseInt(evt.from.id.replace('tasks-', ''));
+          const toGroupId = parseInt(evt.to.id.replace('tasks-', ''));
+          const fromGroup = groups.find(g => g.id === fromGroupId);
+          const toGroup = groups.find(g => g.id === toGroupId);
+          const taskIdx = fromGroup.tasks.findIndex(t => t.id === taskId);
+          const [task] = fromGroup.tasks.splice(taskIdx, 1);
+          toGroup.tasks.splice(evt.newIndex, 0, task);
+        }
+      });
+
+      // グループ名ダブルクリック編集
+      const nameEl = col.querySelector('.group-name');
+      nameEl.addEventListener('dblclick', () => {
+        const current = group.name;
+        const input = document.createElement('input');
+        input.value = current;
+        nameEl.replaceWith(input);
+        input.focus();
+        const save = () => {
+          group.name = input.value.trim() || current;
+          const newEl = document.createElement('div');
+          newEl.className = 'group-name';
+          newEl.title = 'ダブルクリックで編集';
+          newEl.textContent = group.name;
+          newEl.addEventListener('dblclick', () => {});
+          input.replaceWith(newEl);
+        };
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter') save();
+          if (e.key === 'Escape') {
+            const newEl = document.createElement('div');
+            newEl.className = 'group-name';
+            newEl.textContent = current;
+            input.replaceWith(newEl);
+          }
+        });
+      });
+
+      // グループ削除
+      col.querySelector('.delete-group-btn').addEventListener('click', () => {
+        if (confirm(`「${group.name}」を削除しますか？\nタスクもすべて削除されます。`)) {
+          const idx = groups.findIndex(g => g.id === group.id);
+          groups.splice(idx, 1);
+          renderBoard();
+        }
+      });
+
+      // タスク追加フォーム
+      const addBtn = col.querySelector('.add-task-btn');
+      const form = col.querySelector('.add-task-form');
+      const textarea = form.querySelector('textarea');
+
+      addBtn.addEventListener('click', () => {
+        addBtn.style.display = 'none';
+        form.style.display = 'block';
+        textarea.focus();
+      });
+
+      const addTask = () => {
+        const title = textarea.value.trim();
+        if (!title) return;
+        const task = { id: nextTaskId++, title, deadline: '', priority: '', tags: [] };
+        group.tasks.push(task);
+        taskList.appendChild(createTaskCard(task, group));
+        textarea.value = '';
+        textarea.focus();
+      };
+
+      form.querySelector('.btn-add-task').addEventListener('click', addTask);
+      textarea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addTask(); }
+        if (e.key === 'Escape') {
+          form.style.display = 'none';
+          addBtn.style.display = 'block';
+        }
+      });
+      form.querySelector('.btn-cancel').addEventListener('click', () => {
+        form.style.display = 'none';
+        addBtn.style.display = 'block';
+        textarea.value = '';
+      });
+
+      return col;
+    }
+
+    function createTaskCard(task, group) {
+      const card = document.createElement('div');
+      card.className = 'task-card';
+      card.dataset.id = task.id;
+
+      const deadlineClass = getDeadlineClass(task.deadline);
+      const deadlineBadge = task.deadline
+        ? `<span class="deadline-badge ${deadlineClass}">📅 ${task.deadline}</span>`
+        : '';
+      const priorityDot = task.priority
+        ? `<span class="priority-dot" style="background:${priorityColors[task.priority]}"></span>`
+        : '';
+      const tagChips = task.tags.map(tag =>
+        `<span class="tag-chip" style="background:${tagColors[tag] || '#5e6c84'}">${tag}</span>`
+      ).join('');
+
+      card.innerHTML = `
+        <div class="task-title">${task.title}</div>
+        <div class="task-meta">${priorityDot}${deadlineBadge}${tagChips}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        sessionStorage.setItem('currentTask', JSON.stringify(task));
+        sessionStorage.setItem('currentGroupId', group.id);
+        location.href = 'task.html';
+      });
+
+      return card;
+    }
+
+    function createAddGroupColumn() {
+      const col = document.createElement('div');
+      col.className = 'add-group-column';
+      col.innerHTML = `
+        <button class="add-group-btn">＋ グループを追加</button>
+        <div class="add-group-form" style="display:none">
+          <input type="text" placeholder="グループ名を入力" maxlength="30">
+          <div class="form-actions">
+            <button class="btn btn-primary btn-add-group">追加</button>
+            <button class="btn-cancel">×</button>
+          </div>
+        </div>
+      `;
+
+      const btn = col.querySelector('.add-group-btn');
+      const form = col.querySelector('.add-group-form');
+      const input = form.querySelector('input');
+
+      btn.addEventListener('click', () => {
+        btn.style.display = 'none';
+        form.style.display = 'block';
+        input.focus();
+      });
+
+      const addGroup = () => {
+        const name = input.value.trim();
+        if (!name) return;
+        groups.push({ id: Date.now(), name, tasks: [] });
+        renderBoard();
+      };
+
+      form.querySelector('.btn-add-group').addEventListener('click', addGroup);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') addGroup();
+        if (e.key === 'Escape') {
+          form.style.display = 'none';
+          btn.style.display = 'block';
+        }
+      });
+      form.querySelector('.btn-cancel').addEventListener('click', () => {
+        form.style.display = 'none';
+        btn.style.display = 'block';
+        input.value = '';
+      });
+
+      return col;
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>
