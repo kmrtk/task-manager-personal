@@ -216,6 +216,7 @@
         memo: document.getElementById('taskMemo').value,
       };
       sessionStorage.setItem('currentTask', JSON.stringify(updated));
+      alert('保存しました');
       history.back();
     });
 
