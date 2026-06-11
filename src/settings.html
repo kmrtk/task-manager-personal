@@ -101,9 +101,11 @@
           <button class="btn-delete-permanent" data-idx="${idx}">完全削除</button>
         `;
         el.querySelector('.btn-restore').addEventListener('click', () => {
-          alert(`「${item.title}」を復元しました。\n（プロトタイプのため元のグループには戻りません）`);
+          const restoredTask = { ...item };
           trashItems.splice(idx, 1);
           sessionStorage.setItem('trash', JSON.stringify(trashItems));
+          sessionStorage.setItem('restoredTask', JSON.stringify(restoredTask));
+          alert(`「${restoredTask.title}」を復元しました`);
           renderTrash();
         });
         el.querySelector('.btn-delete-permanent').addEventListener('click', () => {
