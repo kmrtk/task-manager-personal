@@ -82,7 +82,7 @@
       </div>
 
       <!-- アクション -->
-      <div class="task-actions" style="justify-content: flex-end; gap: 8px;">
+      <div class="task-actions">
         <button class="btn btn-primary" id="saveBtn">💾 保存</button>
         <button class="btn btn-danger" id="trashBtn">🗑️ ゴミ箱に移動</button>
       </div>
@@ -216,7 +216,7 @@
         memo: document.getElementById('taskMemo').value,
       };
       sessionStorage.setItem('currentTask', JSON.stringify(updated));
-      alert('保存しました');
+      history.back();
     });
 
     // ゴミ箱に移動
