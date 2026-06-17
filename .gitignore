@@ -10,3 +10,6 @@ backend/build/
 # OS
 .DS_Store
 Thumbs.db
+
+# ローカルメモ
+eroo.md
