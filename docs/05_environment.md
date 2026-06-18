@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | 言語 | Java | 25 |
 | フレームワーク | Spring Boot | 4.0.6 |
-| ビルドツール | Gradle | - |
+| ビルドツール | Gradle | 9.5.1 |
 | API形式 | REST API | - |
 | ORM | Spring Data JPA / Hibernate | - |
 
