@@ -29,4 +29,12 @@ public class TaskController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/search")
+    public List<Task> search(@RequestParam(defaultValue = "") String q) {
+        if (q.isBlank()) {
+            return taskRepository.findAll();
+        }
+        return taskRepository.findByTitleContainingIgnoreCase(q);
+    }
 }
