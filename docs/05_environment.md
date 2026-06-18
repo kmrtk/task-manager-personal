@@ -11,9 +11,13 @@
 
 | 項目 | 技術 | バージョン |
 | --- | --- | --- |
-| 言語 | HTML / CSS / JavaScript | - |
-| ドラッグ&ドロップ | Sortable.js | 1.15.0 |
-| Webサーバー | nginx | alpine |
+| フレームワーク | React | 19.2.x |
+| 言語 | TypeScript | 5.9.x |
+| ビルドツール | Vite | 7.3.x |
+| ドラッグ&ドロップ | dnd-kit | - |
+| スタイリング | Tailwind CSS | 4.2.x |
+| パッケージ管理 | npm | 10.9.x |
+| Web サーバー | nginx | alpine |
 
 ## 2. バックエンド
 

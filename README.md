@@ -25,8 +25,12 @@
 ### フロントエンド
 | 項目 | 技術 | バージョン |
 |------|------|-----------|
-| 言語 | HTML / CSS / JavaScript | - |
-| ドラッグ&ドロップ | Sortable.js | 1.15.0 |
+| フレームワーク | React | 19.2.x |
+| 言語 | TypeScript | 5.9.x |
+| ビルドツール | Vite | 7.3.x |
+| ドラッグ&ドロップ | dnd-kit | - |
+| スタイリング | Tailwind CSS | 4.2.x |
+| パッケージ管理 | npm | 10.9.x |
 | Web サーバー | nginx | alpine |
 
 ### バックエンド
@@ -53,12 +57,12 @@
 
 ## 画面構成
 
-| 画面 | URL | 内容 |
-|------|-----|------|
-| フォルダ一覧 | `/` | フォルダの一覧表示・作成・編集・削除 |
-| ボード画面 | `/folder.html` | グループ・タスクの一覧・検索・操作 |
-| タスク詳細 | `/task.html` | タスクの詳細表示・編集 |
-| 設定 | `/settings.html` | タグ管理・ゴミ箱 |
+| 画面 | 内容 |
+|------|------|
+| フォルダ一覧 | フォルダの一覧表示・作成・編集・削除 |
+| ボード画面 | タスクのカンバン表示・検索・ドラッグ&ドロップ |
+| タスク詳細 | タスクの詳細表示・編集 |
+| 設定 | タグ管理・ゴミ箱 |
 
 ### 画面遷移
 
@@ -76,9 +80,10 @@
 
 | サービス | ポート |
 |---------|--------|
-| nginx（フロントエンド） | 80 |
+| nginx（フロントエンド・本番） | 80 |
 | Spring Boot（バックエンド） | 8080 |
 | PostgreSQL | 5432 |
+| Vite dev server（開発時のみ） | 5173 |
 
 ---
 
@@ -87,12 +92,13 @@
 ### 前提条件
 - Docker / Docker Compose がインストールされていること
 - Java 25 がインストールされていること
+- Node.js / npm がインストールされていること
 
-### 手順
+### 開発時の起動手順
 
-**1. PostgreSQL・nginx を起動する**
+**1. PostgreSQL を起動する**
 ```bash
-docker-compose up -d
+docker-compose up -d postgres
 ```
 
 **2. Spring Boot を起動する**
@@ -102,7 +108,38 @@ cd backend
 gradlew.bat bootRun # Windows
 ```
 
-**3. ブラウザでアクセスする**
+**3. フロントエンド開発サーバーを起動する**
+```bash
+cd frontend
+npm install   # 初回のみ
+npm run dev
+```
+
+**4. ブラウザでアクセスする**
+```
+http://localhost:5173
+```
+
+### 本番確認（nginx でビルド済みファイルを配信）
+
+**1. フロントエンドをビルドする**
+```bash
+cd frontend
+npm run build
+```
+
+**2. PostgreSQL・nginx を起動する**
+```bash
+docker-compose up -d
+```
+
+**3. Spring Boot を起動する**
+```bash
+cd backend
+./gradlew bootRun
+```
+
+**4. ブラウザでアクセスする**
 ```
 http://localhost/
 ```
@@ -130,14 +167,16 @@ Tasukumanejimento/
 │       ├── controller/       # REST API コントローラー
 │       ├── entity/           # エンティティ（Task, Folder）
 │       └── repository/       # データアクセス層
-├── src/                      # フロントエンド（静的ファイル）
-│   ├── index.html            # フォルダ一覧画面
-│   ├── folder.html           # ボード画面
-│   ├── task.html             # タスク詳細画面
-│   ├── settings.html         # 設定画面
-│   └── css/style.css
+├── frontend/                 # React フロントエンド
+│   ├── src/
+│   │   ├── components/       # React コンポーネント
+│   │   ├── types/            # TypeScript 型定義
+│   │   ├── App.tsx           # ボード画面
+│   │   └── main.tsx          # エントリポイント
+│   ├── package.json
+│   └── vite.config.ts        # Vite 設定（API プロキシ含む）
 ├── nginx/
-│   └── nginx.conf            # nginx 設定（APIプロキシ）
+│   └── nginx.conf            # nginx 設定（API プロキシ）
 ├── docs/                     # 要件定義書
 │   ├── 01_purpose-usecase.md
 │   ├── 02_non-functional.md
