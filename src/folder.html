@@ -12,38 +12,87 @@
   <header class="header">
     <a href="index.html" class="btn-back">←</a>
     <div class="page-title" id="folderTitle">フォルダ</div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="タスクを検索..." />
+      <button class="btn btn-primary" id="searchBtn">検索</button>
+    </div>
     <a href="settings.html" class="btn btn-secondary">⚙️ 設定</a>
   </header>
 
   <main class="board-container" id="boardContainer"></main>
 
   <script>
+    const API_BASE = '/api';
+    const STATUS_MAP = { 'TODO': '未着手', 'IN_PROGRESS': '進行中', 'DONE': '完了' };
+    const FIXED_STATUSES = ['未着手', '進行中', '完了'];
+
     const params = new URLSearchParams(location.search);
     const folderName = params.get('name') || 'フォルダ';
     document.getElementById('folderTitle').textContent = folderName;
     document.title = folderName;
 
-    const groups = [
-      {
-        id: 1, name: '未着手', sortState: null,
-        tasks: [
-          { id: 101, title: 'デザイン案を確認する', deadline: '', priority: '', tags: [], createdAt: '2026-06-01' },
-          { id: 102, title: 'ミーティングの議事録をまとめる', deadline: '2026-06-20', priority: 'orange', tags: ['急ぎ'], createdAt: '2026-06-05' },
-        ]
-      },
-      {
-        id: 2, name: '進行中', sortState: null,
-        tasks: [
-          { id: 103, title: 'プロトタイプを作成する', deadline: '2026-06-15', priority: 'red', tags: ['重要'], createdAt: '2026-06-03' },
-        ]
-      },
-      {
-        id: 3, name: '完了', sortState: null,
-        tasks: [
-          { id: 104, title: '要件定義書を作成する', deadline: '', priority: 'green', tags: [], createdAt: '2026-05-28' },
-        ]
-      },
-    ];
+    let groups = FIXED_STATUSES.map((name, i) => ({ id: i + 1, name, sortState: null, tasks: [] }));
+
+    async function fetchAndRender(q = '') {
+      try {
+        const url = q
+          ? `${API_BASE}/tasks/search?q=${encodeURIComponent(q)}`
+          : `${API_BASE}/tasks`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('API error: ' + res.status);
+        const tasks = await res.json();
+
+        const toJa = status => STATUS_MAP[status] || '未着手';
+
+        groups = FIXED_STATUSES.map((name, i) => ({
+          id: i + 1,
+          name,
+          sortState: null,
+          tasks: tasks
+            .filter(t => toJa(t.status) === name)
+            .map(t => ({
+              id: t.id,
+              title: t.title,
+              description: t.description || '',
+              deadline: '',
+              priority: '',
+              tags: [],
+              createdAt: t.createdAt ? t.createdAt.split('T')[0] : ''
+            }))
+        }));
+      } catch (e) {
+        console.error('API取得失敗、モックデータを使用:', e);
+        groups = [
+          {
+            id: 1, name: '未着手', sortState: null,
+            tasks: [
+              { id: 101, title: 'デザイン案を確認する', description: '', deadline: '', priority: '', tags: [], createdAt: '2026-06-01' },
+              { id: 102, title: 'ミーティングの議事録をまとめる', description: '', deadline: '2026-06-20', priority: 'orange', tags: ['急ぎ'], createdAt: '2026-06-05' },
+            ]
+          },
+          {
+            id: 2, name: '進行中', sortState: null,
+            tasks: [
+              { id: 103, title: 'プロトタイプを作成する', description: '', deadline: '2026-06-15', priority: 'red', tags: ['重要'], createdAt: '2026-06-03' },
+            ]
+          },
+          {
+            id: 3, name: '完了', sortState: null,
+            tasks: [
+              { id: 104, title: '要件定義書を作成する', description: '', deadline: '', priority: 'green', tags: [], createdAt: '2026-05-28' },
+            ]
+          },
+        ];
+      }
+      renderBoard();
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      fetchAndRender(document.getElementById('searchInput').value.trim());
+    });
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchAndRender(document.getElementById('searchInput').value.trim());
+    });
 
     const tagColors = { '急ぎ': '#eb5a46', '重要': '#0079bf', '確認待ち': '#f2d600' };
     const priorityColors = { red: '#eb5a46', orange: '#ff9f1a', green: '#61bd4f', blue: '#0079bf', purple: '#c377e0' };
@@ -333,7 +382,7 @@
     }
 
     applyRestoredTask();
-    renderBoard();
+    fetchAndRender();
   </script>
 </body>
 </html>
