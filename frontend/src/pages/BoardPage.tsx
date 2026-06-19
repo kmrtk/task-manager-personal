@@ -12,6 +12,8 @@ import type { Task, TaskStatus } from '../types/task'
 import { STATUSES } from '../types/task'
 import { BoardColumn } from '../components/BoardColumn'
 import { SearchBar } from '../components/SearchBar'
+import { TaskModal } from '../components/TaskModal'
+import { updateTask, deleteTask } from '../api/task'
 
 type TaskMap = Record<TaskStatus, Task[]>
 
@@ -23,12 +25,19 @@ function groupByStatus(tasks: Task[]): TaskMap {
   }
 }
 
+interface ModalState {
+  open: boolean
+  defaultStatus: TaskStatus
+  editTask?: Task
+}
+
 export function BoardPage() {
   const { folderId } = useParams<{ folderId: string }>()
   const navigate = useNavigate()
   const [taskMap, setTaskMap] = useState<TaskMap>({ TODO: [], IN_PROGRESS: [], DONE: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [modal, setModal] = useState<ModalState>({ open: false, defaultStatus: 'TODO' })
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchTasks = useCallback(async (query = '') => {
@@ -88,13 +97,27 @@ export function BoardPage() {
     })
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
+
     const fromStatus = findContainer(active.id)
     const toStatus = findContainer(over.id)
-    if (!fromStatus || !toStatus || fromStatus !== toStatus) return
 
+    if (!fromStatus || !toStatus) return
+
+    if (fromStatus !== toStatus) {
+      // ステータスが変わった場合のみDBに PUT
+      try {
+        await updateTask(active.id as number, { status: toStatus })
+      } catch {
+        // 失敗時はDBから再取得してロールバック
+        fetchTasks()
+      }
+      return
+    }
+
+    // 同一列内の並び替え（ローカルのみ）
     setTaskMap((prev) => {
       const items = prev[fromStatus]
       const oldIdx = items.findIndex((t) => t.id === active.id)
@@ -102,6 +125,44 @@ export function BoardPage() {
       if (oldIdx === newIdx) return prev
       return { ...prev, [fromStatus]: arrayMove(items, oldIdx, newIdx) }
     })
+  }
+
+  const handleTaskSaved = (saved: Task) => {
+    if (modal.editTask) {
+      // 編集: 既存タスクを更新
+      setTaskMap((prev) => {
+        const newMap = { ...prev }
+        // 元のステータスから除去
+        for (const s of STATUSES) {
+          newMap[s] = newMap[s].filter((t) => t.id !== saved.id)
+        }
+        // 新しいステータスに追加
+        newMap[saved.status] = [...newMap[saved.status], saved]
+        return newMap
+      })
+    } else {
+      // 新規作成: 対象ステータスの列に追加
+      setTaskMap((prev) => ({
+        ...prev,
+        [saved.status]: [...prev[saved.status], saved],
+      }))
+    }
+    setModal({ open: false, defaultStatus: 'TODO' })
+  }
+
+  const handleDeleteTask = async (id: number) => {
+    try {
+      await deleteTask(id)
+      setTaskMap((prev) => {
+        const newMap = { ...prev }
+        for (const s of STATUSES) {
+          newMap[s] = newMap[s].filter((t) => t.id !== id)
+        }
+        return newMap
+      })
+    } catch {
+      setError('タスクの削除に失敗しました。')
+    }
   }
 
   const totalCount = STATUSES.reduce((acc, s) => acc + taskMap[s].length, 0)
@@ -136,12 +197,29 @@ export function BoardPage() {
           <DndContext sensors={sensors} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4">
               {STATUSES.map((status) => (
-                <BoardColumn key={status} status={status} tasks={taskMap[status]} />
+                <BoardColumn
+                  key={status}
+                  status={status}
+                  tasks={taskMap[status]}
+                  onAddTask={(s) => setModal({ open: true, defaultStatus: s })}
+                  onEditTask={(task) => setModal({ open: true, defaultStatus: task.status, editTask: task })}
+                  onDeleteTask={handleDeleteTask}
+                />
               ))}
             </div>
           </DndContext>
         )}
       </main>
+
+      {modal.open && (
+        <TaskModal
+          initialTask={modal.editTask}
+          defaultStatus={modal.defaultStatus}
+          folderId={folderId ? Number(folderId) : null}
+          onClose={() => setModal({ open: false, defaultStatus: 'TODO' })}
+          onSave={handleTaskSaved}
+        />
+      )}
     </div>
   )
 }
