@@ -1,12 +1,22 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Task } from '../types/task'
-import { STATUS_LABEL } from '../types/task'
+import { STATUS_LABEL, PRIORITY_LABEL, PRIORITY_DOT_COLOR } from '../types/task'
 
 const STATUS_COLOR: Record<string, string> = {
   TODO: 'bg-gray-100 text-gray-600',
   IN_PROGRESS: 'bg-blue-100 text-blue-700',
   DONE: 'bg-green-100 text-green-700',
+}
+
+function getDueDateStyle(dueDate: string): string {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(dueDate)
+  const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays < 0) return 'text-red-600 font-semibold'
+  if (diffDays <= 3) return 'text-yellow-600 font-semibold'
+  return 'text-gray-400'
 }
 
 interface Props {
@@ -47,16 +57,26 @@ export function TaskCard({ task, onEdit, onDelete }: Props) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-800 leading-snug">{task.title}</p>
+          <div className="flex items-center gap-1.5">
+            {task.priority && (
+              <span
+                className={`w-2.5 h-2.5 rounded-full shrink-0 ${PRIORITY_DOT_COLOR[task.priority]}`}
+                title={`優先度: ${PRIORITY_LABEL[task.priority]}`}
+              />
+            )}
+            <p className="text-sm font-medium text-gray-800 leading-snug">{task.title}</p>
+          </div>
           {task.description && (
             <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
           )}
-          <div className="mt-2 flex items-center justify-between">
+          <div className="mt-2 flex items-center justify-between flex-wrap gap-1">
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[task.status]}`}>
               {STATUS_LABEL[task.status]}
             </span>
-            {task.createdAt && (
-              <span className="text-xs text-gray-400">{task.createdAt.split('T')[0]}</span>
+            {task.dueDate && (
+              <span className={`text-xs ${getDueDateStyle(task.dueDate)}`}>
+                📅 {task.dueDate}
+              </span>
             )}
           </div>
         </div>

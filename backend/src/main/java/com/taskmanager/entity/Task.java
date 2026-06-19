@@ -1,6 +1,7 @@
 package com.taskmanager.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -23,6 +24,12 @@ public class Task {
     @Column(name = "folder_id")
     private Long folderId;
 
+    @Column
+    private String priority;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -40,5 +47,9 @@ public class Task {
     public void setStatus(String status) { this.status = status; }
     public Long getFolderId() { return folderId; }
     public void setFolderId(Long folderId) { this.folderId = folderId; }
+    public String getPriority() { return priority; }
+    public void setPriority(String priority) { this.priority = priority; }
+    public LocalDate getDueDate() { return dueDate; }
+    public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

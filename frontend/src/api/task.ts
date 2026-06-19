@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from '../types/task'
+import type { Task, TaskStatus, TaskPriority } from '../types/task'
 
 export async function fetchTasks(query = ''): Promise<Task[]> {
   const url = query ? `/api/tasks/search?q=${encodeURIComponent(query)}` : '/api/tasks'
@@ -12,6 +12,8 @@ export async function createTask(data: {
   description: string | null
   status: TaskStatus
   folderId: number | null
+  priority: TaskPriority | null
+  dueDate: string | null
 }): Promise<Task> {
   const res = await fetch('/api/tasks', {
     method: 'POST',
