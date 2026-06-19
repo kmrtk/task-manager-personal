@@ -19,3 +19,18 @@ export async function createFolder(name: string): Promise<Folder> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
+
+export async function updateFolder(id: number, name: string): Promise<Folder> {
+  const res = await fetch(`/api/folders/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+export async function deleteFolder(id: number): Promise<void> {
+  const res = await fetch(`/api/folders/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+}

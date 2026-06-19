@@ -8,4 +8,6 @@ import java.util.List;
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByTitleContainingIgnoreCase(String title);
+
+    void deleteByFolderId(Long folderId);
 }
