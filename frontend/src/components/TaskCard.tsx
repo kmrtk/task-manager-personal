@@ -42,18 +42,10 @@ export function TaskCard({ task, onEdit, onDelete }: Props) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 group"
+      {...listeners}
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-grab active:cursor-grabbing group"
     >
-      <div className="flex items-start gap-2">
-        {/* ドラッグハンドル */}
-        <div
-          {...listeners}
-          className="mt-0.5 shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400"
-          title="ドラッグして移動"
-        >
-          ⠿
-        </div>
-
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-800 leading-snug">{task.title}</p>
           {task.description && (
@@ -70,17 +62,17 @@ export function TaskCard({ task, onEdit, onDelete }: Props) {
         </div>
 
         {/* 編集・削除ボタン（ホバー時のみ表示） */}
-        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
             onClick={handleEdit}
-            className="text-gray-400 hover:text-blue-500 text-xs leading-none p-0.5"
+            className="text-gray-400 hover:text-blue-500 text-xs p-1 rounded hover:bg-gray-100"
             title="編集"
           >
             ✏️
           </button>
           <button
             onClick={handleDelete}
-            className="text-gray-400 hover:text-red-500 text-xs leading-none p-0.5"
+            className="text-gray-400 hover:text-red-500 text-xs p-1 rounded hover:bg-gray-100"
             title="削除"
           >
             🗑️
