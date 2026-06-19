@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { Task, TaskStatus, TaskPriority } from '../types/task'
 import { STATUSES, STATUS_LABEL, PRIORITIES, PRIORITY_LABEL, PRIORITY_DOT_COLOR } from '../types/task'
 import { createTask, updateTask } from '../api/task'
@@ -18,8 +18,30 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
   const [status, setStatus] = useState<TaskStatus>(initialTask?.status ?? defaultStatus)
   const [priority, setPriority] = useState<TaskPriority | null>(initialTask?.priority ?? null)
   const [dueDate, setDueDate] = useState(initialTask?.dueDate ?? '')
+  const [tags, setTags] = useState<string[]>(initialTask?.tags ?? [])
+  const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const tagInputRef = useRef<HTMLInputElement>(null)
+
+  const addTag = () => {
+    const trimmed = tagInput.trim()
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed])
+    }
+    setTagInput('')
+  }
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      addTag()
+    }
+  }
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter((t) => t !== tag))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,6 +58,7 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
           folderId,
           priority,
           dueDate: dueDate || null,
+          tags,
         })
       } else {
         saved = await createTask({
@@ -45,6 +68,7 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
           folderId,
           priority,
           dueDate: dueDate || null,
+          tags,
         })
       }
       onSave(saved)
@@ -143,6 +167,40 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
               onChange={(e) => setDueDate(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">タグ（任意）</label>
+            <div
+              className="flex flex-wrap gap-1.5 border border-gray-300 rounded-lg px-3 py-2 min-h-[38px] cursor-text"
+              onClick={() => tagInputRef.current?.focus()}
+            >
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); removeTag(tag) }}
+                    className="hover:text-blue-900 leading-none"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <input
+                ref={tagInputRef}
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={addTag}
+                placeholder={tags.length === 0 ? 'タグを入力してEnter' : ''}
+                className="flex-1 min-w-[120px] text-sm outline-none bg-transparent"
+              />
+            </div>
           </div>
 
           {error && (

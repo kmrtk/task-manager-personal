@@ -9,6 +9,7 @@ export interface Task {
   folderId: number | null
   priority: TaskPriority | null
   dueDate: string | null
+  tags: string[]
   createdAt: string | null
 }
 

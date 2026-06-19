@@ -3,6 +3,8 @@ package com.taskmanager.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tasks")
@@ -30,6 +32,11 @@ public class Task {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "task_tags", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "tag")
+    private List<String> tags = new ArrayList<>();
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -51,5 +58,7 @@ public class Task {
     public void setPriority(String priority) { this.priority = priority; }
     public LocalDate getDueDate() { return dueDate; }
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags != null ? tags : new ArrayList<>(); }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
