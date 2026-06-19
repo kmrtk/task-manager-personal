@@ -4,6 +4,7 @@ import com.taskmanager.entity.Folder;
 import com.taskmanager.repository.FolderRepository;
 import com.taskmanager.repository.TaskRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,6 +40,7 @@ public class FolderController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @Transactional
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!folderRepository.existsById(id)) {
