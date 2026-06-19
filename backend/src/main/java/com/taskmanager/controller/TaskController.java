@@ -37,4 +37,29 @@ public class TaskController {
         }
         return taskRepository.findByTitleContainingIgnoreCase(q);
     }
+
+    @PostMapping
+    public Task create(@RequestBody Task task) {
+        return taskRepository.save(task);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Task> update(@PathVariable Long id, @RequestBody Task body) {
+        return taskRepository.findById(id).map(task -> {
+            task.setTitle(body.getTitle());
+            task.setDescription(body.getDescription());
+            task.setStatus(body.getStatus());
+            task.setFolderId(body.getFolderId());
+            return ResponseEntity.ok(taskRepository.save(task));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!taskRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        taskRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
