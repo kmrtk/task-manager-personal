@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { Task, TaskStatus } from '../types/task'
-import { STATUSES, STATUS_LABEL } from '../types/task'
+import type { Task, TaskStatus, TaskPriority } from '../types/task'
+import { STATUSES, STATUS_LABEL, PRIORITIES, PRIORITY_LABEL, PRIORITY_DOT_COLOR } from '../types/task'
 import { createTask, updateTask } from '../api/task'
 
 interface Props {
@@ -16,6 +16,8 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
   const [title, setTitle] = useState(initialTask?.title ?? '')
   const [description, setDescription] = useState(initialTask?.description ?? '')
   const [status, setStatus] = useState<TaskStatus>(initialTask?.status ?? defaultStatus)
+  const [priority, setPriority] = useState<TaskPriority | null>(initialTask?.priority ?? null)
+  const [dueDate, setDueDate] = useState(initialTask?.dueDate ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,6 +34,8 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
           description: description.trim() || null,
           status,
           folderId,
+          priority,
+          dueDate: dueDate || null,
         })
       } else {
         saved = await createTask({
@@ -39,6 +43,8 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
           description: description.trim() || null,
           status,
           folderId,
+          priority,
+          dueDate: dueDate || null,
         })
       }
       onSave(saved)
@@ -95,6 +101,48 @@ export function TaskModal({ initialTask, defaultStatus = 'TODO', folderId, onClo
                 <option key={s} value={s}>{STATUS_LABEL[s]}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">優先度</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPriority(null)}
+                className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${
+                  priority === null
+                    ? 'bg-gray-200 border-gray-400 font-semibold'
+                    : 'border-gray-300 text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                なし
+              </button>
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPriority(p)}
+                  className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border transition-colors ${
+                    priority === p
+                      ? 'bg-gray-100 border-gray-400 font-semibold'
+                      : 'border-gray-300 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${PRIORITY_DOT_COLOR[p]}`} />
+                  {PRIORITY_LABEL[p]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">期限（任意）</label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
           </div>
 
           {error && (

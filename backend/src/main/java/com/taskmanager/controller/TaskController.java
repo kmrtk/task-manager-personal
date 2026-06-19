@@ -50,6 +50,8 @@ public class TaskController {
             task.setDescription(body.getDescription());
             task.setStatus(body.getStatus());
             task.setFolderId(body.getFolderId());
+            task.setPriority(body.getPriority());
+            task.setDueDate(body.getDueDate());
             return ResponseEntity.ok(taskRepository.save(task));
         }).orElse(ResponseEntity.notFound().build());
     }

@@ -9,13 +9,14 @@ import {
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import type { Task, TaskStatus } from '../types/task'
-import { STATUSES } from '../types/task'
+import { STATUSES, PRIORITY_ORDER } from '../types/task'
 import { BoardColumn } from '../components/BoardColumn'
 import { SearchBar } from '../components/SearchBar'
 import { TaskModal } from '../components/TaskModal'
 import { updateTask, deleteTask } from '../api/task'
 
 type TaskMap = Record<TaskStatus, Task[]>
+type SortOrder = 'date_asc' | 'date_desc' | 'priority_asc' | 'priority_desc' | null
 
 function groupByStatus(tasks: Task[]): TaskMap {
   return {
@@ -23,6 +24,20 @@ function groupByStatus(tasks: Task[]): TaskMap {
     IN_PROGRESS: tasks.filter((t) => t.status === 'IN_PROGRESS'),
     DONE: tasks.filter((t) => t.status === 'DONE'),
   }
+}
+
+function sortTasks(tasks: Task[], order: SortOrder): Task[] {
+  if (!order) return tasks
+  return [...tasks].sort((a, b) => {
+    if (order === 'date_asc' || order === 'date_desc') {
+      const da = a.dueDate ?? '￿'
+      const db = b.dueDate ?? '￿'
+      return order === 'date_asc' ? da.localeCompare(db) : db.localeCompare(da)
+    }
+    const pa = a.priority != null ? PRIORITY_ORDER[a.priority] : 999
+    const pb = b.priority != null ? PRIORITY_ORDER[b.priority] : 999
+    return order === 'priority_asc' ? pa - pb : pb - pa
+  })
 }
 
 interface ModalState {
@@ -38,6 +53,7 @@ export function BoardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>({ open: false, defaultStatus: 'TODO' })
+  const [sortOrder, setSortOrder] = useState<SortOrder>(null)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchTasks = useCallback(async (query = '') => {
@@ -179,6 +195,28 @@ export function BoardPage() {
         <h1 className="text-white font-bold text-lg">タスクボード</h1>
         <div className="flex-1" />
         <SearchBar onSearch={handleSearch} />
+        <div className="flex gap-1">
+          {(
+            [
+              { label: '日付↑', value: 'date_asc' },
+              { label: '日付↓', value: 'date_desc' },
+              { label: '優先度↑', value: 'priority_asc' },
+              { label: '優先度↓', value: 'priority_desc' },
+            ] as { label: string; value: SortOrder }[]
+          ).map(({ label, value }) => (
+            <button
+              key={value!}
+              onClick={() => setSortOrder((prev) => (prev === value ? null : value))}
+              className={`text-xs px-2 py-1 rounded font-medium transition-colors ${
+                sortOrder === value
+                  ? 'bg-white text-[#026aa7]'
+                  : 'text-white/80 hover:text-white hover:bg-white/20'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <span className="text-white/70 text-sm">{totalCount} 件</span>
       </header>
 
@@ -200,7 +238,7 @@ export function BoardPage() {
                 <BoardColumn
                   key={status}
                   status={status}
-                  tasks={taskMap[status]}
+                  tasks={sortTasks(taskMap[status], sortOrder)}
                   onAddTask={(s) => setModal({ open: true, defaultStatus: s })}
                   onEditTask={(task) => setModal({ open: true, defaultStatus: task.status, editTask: task })}
                   onDeleteTask={handleDeleteTask}
