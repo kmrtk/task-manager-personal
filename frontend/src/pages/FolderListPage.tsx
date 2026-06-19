@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchFolders, createFolder } from '../api/folder'
+import { fetchFolders, createFolder, updateFolder, deleteFolder } from '../api/folder'
 import type { Folder } from '../api/folder'
 
 export function FolderListPage() {
@@ -12,11 +12,29 @@ export function FolderListPage() {
   const [newName, setNewName] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const [menuOpenId, setMenuOpenId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editName, setEditName] = useState('')
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const menuRef = useRef<HTMLDivElement | null>(null)
+
   useEffect(() => {
     fetchFolders()
       .then(setFolders)
       .catch(() => setError('フォルダの取得に失敗しました。'))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpenId(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const handleCreate = async () => {
@@ -41,6 +59,44 @@ export function FolderListPage() {
       setNewName('')
     }
   }
+
+  const startEdit = (folder: Folder) => {
+    setMenuOpenId(null)
+    setEditingId(folder.id)
+    setEditName(folder.name)
+  }
+
+  const handleUpdate = async (id: number) => {
+    if (!editName.trim()) return
+    try {
+      const updated = await updateFolder(id, editName.trim())
+      setFolders((prev) => prev.map((f) => (f.id === id ? updated : f)))
+      setEditingId(null)
+    } catch {
+      setError('フォルダ名の変更に失敗しました。')
+    }
+  }
+
+  const handleEditKeyDown = (e: React.KeyboardEvent, id: number) => {
+    if (e.key === 'Enter') handleUpdate(id)
+    if (e.key === 'Escape') setEditingId(null)
+  }
+
+  const handleDelete = async () => {
+    if (deletingId === null) return
+    setDeleting(true)
+    try {
+      await deleteFolder(deletingId)
+      setFolders((prev) => prev.filter((f) => f.id !== deletingId))
+      setDeletingId(null)
+    } catch {
+      setError('フォルダの削除に失敗しました。')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const deletingFolder = folders.find((f) => f.id === deletingId)
 
   return (
     <div className="min-h-screen bg-[#0079bf]">
@@ -73,25 +129,98 @@ export function FolderListPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {folders.map((folder) => (
-              <button
-                key={folder.id}
-                onClick={() => navigate(`/folders/${folder.id}`)}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 text-left hover:shadow-md hover:border-blue-300 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📁</span>
-                  <div>
-                    <p className="font-semibold text-gray-800">{folder.name}</p>
-                    {folder.createdAt && (
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {folder.createdAt.split('T')[0]}
-                      </p>
+            {folders.map((folder) =>
+              editingId === folder.id ? (
+                <div
+                  key={folder.id}
+                  className="bg-white rounded-lg shadow-sm border border-blue-400 p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📁</span>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => handleEditKeyDown(e, folder.id)}
+                      autoFocus
+                      className="flex-1 text-sm font-semibold text-gray-800 outline-none border-b border-gray-300 focus:border-blue-500 pb-0.5"
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-3 justify-end">
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      onClick={() => handleUpdate(folder.id)}
+                      disabled={!editName.trim()}
+                      className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium px-3 py-1 rounded transition-colors"
+                    >
+                      保存
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div key={folder.id} className="relative group">
+                  <button
+                    onClick={() => navigate(`/folders/${folder.id}`)}
+                    className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4 text-left hover:shadow-md hover:border-blue-300 transition-all"
+                  >
+                    <div className="flex items-center gap-3 pr-6">
+                      <span className="text-2xl">📁</span>
+                      <div>
+                        <p className="font-semibold text-gray-800">{folder.name}</p>
+                        {folder.createdAt && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {folder.createdAt.split('T')[0]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* メニューボタン */}
+                  <div className="absolute top-3 right-3" ref={menuOpenId === folder.id ? menuRef : null}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpenId(menuOpenId === folder.id ? null : folder.id)
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded p-1 transition-all text-sm leading-none"
+                      title="操作メニュー"
+                    >
+                      ︙
+                    </button>
+
+                    {menuOpenId === folder.id && (
+                      <div className="absolute right-0 top-7 z-10 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-36">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startEdit(folder)
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          名前を変更
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setMenuOpenId(null)
+                            setDeletingId(folder.id)
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          削除
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
-              </button>
-            ))}
+              )
+            )}
 
             {creating && (
               <div className="bg-white rounded-lg shadow-sm border border-blue-400 p-4">
@@ -133,6 +262,37 @@ export function FolderListPage() {
           </div>
         )}
       </main>
+
+      {/* 削除確認ダイアログ */}
+      {deletingId !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80 mx-4">
+            <h3 className="font-bold text-gray-800 text-base mb-2">フォルダを削除しますか？</h3>
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="font-semibold">「{deletingFolder?.name}」</span> を削除します。
+            </p>
+            <p className="text-sm text-red-600 mb-5">
+              このフォルダ内のタスクもすべて削除されます。この操作は取り消せません。
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setDeletingId(null)}
+                disabled={deleting}
+                className="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+              >
+                {deleting ? '削除中...' : '削除する'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
