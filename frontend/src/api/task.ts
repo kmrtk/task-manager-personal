@@ -14,6 +14,7 @@ export async function createTask(data: {
   folderId: number | null
   priority: TaskPriority | null
   dueDate: string | null
+  tags: string[]
 }): Promise<Task> {
   const res = await fetch('/api/tasks', {
     method: 'POST',

@@ -79,6 +79,18 @@ export function TaskCard({ task, onEdit, onDelete }: Props) {
               </span>
             )}
           </div>
+          {task.tags && task.tags.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {task.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 編集・削除ボタン（ホバー時のみ表示） */}
