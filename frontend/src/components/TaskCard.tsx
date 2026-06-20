@@ -20,9 +20,9 @@ function getDueDateStyle(dueDate: string): string {
   today.setHours(0, 0, 0, 0)
   const due = new Date(dueDate)
   const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  if (diffDays < 0) return 'text-red-600 font-semibold'
-  if (diffDays <= 3) return 'text-yellow-600 font-semibold'
-  return 'text-gray-400'
+  if (diffDays < 0) return 'text-red-600 font-bold'
+  if (diffDays <= 7) return 'text-yellow-600 font-bold'
+  return 'text-blue-500'
 }
 
 interface Props {
@@ -82,6 +82,11 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: Props) {
             <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
           )}
           <div className="mt-2 flex items-center justify-between flex-wrap gap-1">
+            {task.dueDate && (
+              <span className={`text-xs ${getDueDateStyle(task.dueDate)}`}>
+                📅 {task.dueDate}
+              </span>
+            )}
             <button
               onClick={handleStatusChange}
               className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-75 transition-opacity ${STATUS_COLOR[task.status]}`}
@@ -89,11 +94,6 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: Props) {
             >
               {STATUS_LABEL[task.status]}
             </button>
-            {task.dueDate && (
-              <span className={`text-xs ${getDueDateStyle(task.dueDate)}`}>
-                📅 {task.dueDate}
-              </span>
-            )}
           </div>
           {task.tags && task.tags.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1">
