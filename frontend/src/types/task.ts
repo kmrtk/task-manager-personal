@@ -1,5 +1,6 @@
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE'
 export type TaskPriority = 'HIGH' | 'MEDIUM' | 'LOW'
+export type SortOrder = 'date_asc' | 'date_desc' | 'priority_asc' | 'priority_desc' | null
 
 export interface Task {
   id: number
