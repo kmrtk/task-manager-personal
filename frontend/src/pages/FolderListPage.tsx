@@ -100,8 +100,14 @@ export function FolderListPage() {
 
   return (
     <div className="min-h-screen bg-[#0079bf]">
-      <header className="bg-[#026aa7] px-4 py-3 flex items-center shadow">
+      <header className="bg-[#026aa7] px-4 py-3 flex items-center justify-between shadow">
         <h1 className="text-white font-bold text-lg">タスク管理</h1>
+        <button
+          onClick={() => navigate('/trash')}
+          className="text-white/80 hover:text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+        >
+          🗑️ ゴミ箱
+        </button>
       </header>
 
       <main className="p-6 max-w-3xl mx-auto">
