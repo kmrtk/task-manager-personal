@@ -18,7 +18,7 @@ const STATUS_COLOR: Record<string, string> = {
 function getDueDateStyle(dueDate: string): string {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const due = new Date(dueDate)
+  const due = new Date(dueDate + 'T00:00:00')
   const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
   if (diffDays < 0) return 'text-red-600 font-bold'
   if (diffDays <= 7) return 'text-yellow-600 font-bold'

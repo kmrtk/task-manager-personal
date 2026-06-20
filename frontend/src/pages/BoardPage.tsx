@@ -143,19 +143,8 @@ export function BoardPage() {
 
   const handleTaskSaved = (saved: Task) => {
     if (modal.editTask) {
-      // 編集: 既存タスクを更新
-      setTaskMap((prev) => {
-        const newMap = { ...prev }
-        // 元のステータスから除去
-        for (const s of STATUSES) {
-          newMap[s] = newMap[s].filter((t) => t.id !== saved.id)
-        }
-        // 新しいステータスに追加
-        newMap[saved.status] = [...newMap[saved.status], saved]
-        return newMap
-      })
+      fetchTasks()
     } else {
-      // 新規作成: 対象ステータスの列に追加
       setTaskMap((prev) => ({
         ...prev,
         [saved.status]: [...prev[saved.status], saved],
