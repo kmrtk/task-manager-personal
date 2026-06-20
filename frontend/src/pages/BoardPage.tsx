@@ -218,6 +218,12 @@ export function BoardPage() {
           ))}
         </div>
         <span className="text-white/70 text-sm">{totalCount} 件</span>
+        <button
+          onClick={() => navigate('/trash')}
+          className="text-white/80 hover:text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+        >
+          🗑️ ゴミ箱
+        </button>
       </header>
 
       <main className="p-4">
