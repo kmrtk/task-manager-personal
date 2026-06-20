@@ -60,10 +60,10 @@ public class TaskController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return taskRepository.findById(id).map(task -> {
+        return taskRepository.findById(id).<ResponseEntity<Void>>map(task -> {
             task.setDeletedAt(LocalDateTime.now());
             taskRepository.save(task);
             return ResponseEntity.<Void>noContent().build();
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.<Void>notFound().build());
     }
 }
