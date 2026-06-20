@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Task, TaskStatus, SortOrder } from '../types/task'
 import { STATUS_LABEL } from '../types/task'
 import { TaskCard } from './TaskCard'
+
+const VISIBLE_LIMIT = 5
 
 const COLUMN_COLOR: Record<TaskStatus, string> = {
   TODO: 'border-t-gray-400',
@@ -23,13 +26,21 @@ interface Props {
 
 export function BoardColumn({ status, tasks, sortOrder, onSortChange, onAddTask, onEditTask, onDeleteTask, onStatusChange }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  const hasMore = tasks.length > VISIBLE_LIMIT
+  const visibleTasks = hasMore && !isExpanded ? tasks.slice(0, VISIBLE_LIMIT) : tasks
+  const hiddenCount = tasks.length - VISIBLE_LIMIT
 
   return (
     <div className={`flex flex-col w-72 shrink-0 bg-gray-100 rounded-lg border-t-4 ${COLUMN_COLOR[status]}`}>
       <div className="px-3 pt-3 pb-2 flex items-center justify-between">
         <h2 className="text-sm font-bold text-gray-700">{STATUS_LABEL[status]}</h2>
         <div className="flex items-center gap-1">
-          <span className="text-xs bg-gray-300 text-gray-600 rounded-full px-2 py-0.5 font-medium">
+          <span
+            className={`text-xs bg-gray-300 text-gray-600 rounded-full px-2 py-0.5 font-medium ${hasMore ? 'cursor-pointer hover:bg-gray-400' : ''}`}
+            onClick={() => hasMore && setIsExpanded(prev => !prev)}
+          >
             {tasks.length}
           </span>
           <button
@@ -66,7 +77,7 @@ export function BoardColumn({ status, tasks, sortOrder, onSortChange, onAddTask,
             isOver ? 'bg-blue-50' : ''
           }`}
         >
-          {tasks.map((task) => (
+          {visibleTasks.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
@@ -75,6 +86,14 @@ export function BoardColumn({ status, tasks, sortOrder, onSortChange, onAddTask,
               onStatusChange={onStatusChange}
             />
           ))}
+          {hasMore && (
+            <button
+              onClick={() => setIsExpanded(prev => !prev)}
+              className="w-full text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-lg py-1.5 transition-colors"
+            >
+              {isExpanded ? '▲ 折りたたむ' : `▼ あと ${hiddenCount} 件表示`}
+            </button>
+          )}
           <button
             onClick={() => onAddTask(status)}
             className="mt-1 w-full text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-lg py-2 transition-colors"
