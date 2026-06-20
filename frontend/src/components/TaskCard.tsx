@@ -1,7 +1,13 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { Task } from '../types/task'
+import type { Task, TaskStatus } from '../types/task'
 import { STATUS_LABEL, PRIORITY_LABEL, PRIORITY_DOT_COLOR } from '../types/task'
+
+const NEXT_STATUS: Record<TaskStatus, TaskStatus> = {
+  TODO: 'IN_PROGRESS',
+  IN_PROGRESS: 'DONE',
+  DONE: 'TODO',
+}
 
 const STATUS_COLOR: Record<string, string> = {
   TODO: 'bg-gray-100 text-gray-600',
@@ -23,9 +29,10 @@ interface Props {
   task: Task
   onEdit: (task: Task) => void
   onDelete: (id: number) => void
+  onStatusChange: (id: number, newStatus: TaskStatus) => void
 }
 
-export function TaskCard({ task, onEdit, onDelete }: Props) {
+export function TaskCard({ task, onEdit, onDelete, onStatusChange }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id })
 
@@ -45,6 +52,11 @@ export function TaskCard({ task, onEdit, onDelete }: Props) {
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation()
     onEdit(task)
+  }
+
+  const handleStatusChange = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onStatusChange(task.id, NEXT_STATUS[task.status])
   }
 
   return (
@@ -70,9 +82,13 @@ export function TaskCard({ task, onEdit, onDelete }: Props) {
             <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
           )}
           <div className="mt-2 flex items-center justify-between flex-wrap gap-1">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[task.status]}`}>
+            <button
+              onClick={handleStatusChange}
+              className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-75 transition-opacity ${STATUS_COLOR[task.status]}`}
+              title="クリックでステータスを変更"
+            >
               {STATUS_LABEL[task.status]}
-            </span>
+            </button>
             {task.dueDate && (
               <span className={`text-xs ${getDueDateStyle(task.dueDate)}`}>
                 📅 {task.dueDate}

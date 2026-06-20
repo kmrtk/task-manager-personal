@@ -13,7 +13,7 @@ import { STATUSES, PRIORITY_ORDER } from '../types/task'
 import { BoardColumn } from '../components/BoardColumn'
 import { SearchBar } from '../components/SearchBar'
 import { TaskModal } from '../components/TaskModal'
-import { updateTask, deleteTask } from '../api/task'
+import { updateTaskStatus, deleteTask } from '../api/task'
 
 type TaskMap = Record<TaskStatus, Task[]>
 type SortOrder = 'date_asc' | 'date_desc' | 'priority_asc' | 'priority_desc' | null
@@ -123,11 +123,9 @@ export function BoardPage() {
     if (!fromStatus || !toStatus) return
 
     if (fromStatus !== toStatus) {
-      // ステータスが変わった場合のみDBに PUT
       try {
-        await updateTask(active.id as number, { status: toStatus })
+        await updateTaskStatus(active.id as number, toStatus)
       } catch {
-        // 失敗時はDBから再取得してロールバック
         fetchTasks()
       }
       return
@@ -164,6 +162,26 @@ export function BoardPage() {
       }))
     }
     setModal({ open: false, defaultStatus: 'TODO' })
+  }
+
+  const handleStatusChange = async (id: number, newStatus: TaskStatus) => {
+    setTaskMap((prev) => {
+      const newMap = { ...prev }
+      for (const s of STATUSES) {
+        const task = newMap[s].find((t) => t.id === id)
+        if (task) {
+          newMap[s] = newMap[s].filter((t) => t.id !== id)
+          newMap[newStatus] = [...newMap[newStatus], { ...task, status: newStatus }]
+          break
+        }
+      }
+      return newMap
+    })
+    try {
+      await updateTaskStatus(id, newStatus)
+    } catch {
+      fetchTasks()
+    }
   }
 
   const handleDeleteTask = async (id: number) => {
@@ -248,6 +266,7 @@ export function BoardPage() {
                   onAddTask={(s) => setModal({ open: true, defaultStatus: s })}
                   onEditTask={(task) => setModal({ open: true, defaultStatus: task.status, editTask: task })}
                   onDeleteTask={handleDeleteTask}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -54,6 +55,14 @@ public class TaskController {
             task.setPriority(body.getPriority());
             task.setDueDate(body.getDueDate());
             task.setTags(body.getTags());
+            return ResponseEntity.ok(taskRepository.save(task));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Task> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return taskRepository.findById(id).map(task -> {
+            task.setStatus(body.get("status"));
             return ResponseEntity.ok(taskRepository.save(task));
         }).orElse(ResponseEntity.notFound().build());
     }

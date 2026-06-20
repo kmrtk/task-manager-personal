@@ -16,9 +16,10 @@ interface Props {
   onAddTask: (status: TaskStatus) => void
   onEditTask: (task: Task) => void
   onDeleteTask: (id: number) => void
+  onStatusChange: (id: number, newStatus: TaskStatus) => void
 }
 
-export function BoardColumn({ status, tasks, onAddTask, onEditTask, onDeleteTask }: Props) {
+export function BoardColumn({ status, tasks, onAddTask, onEditTask, onDeleteTask, onStatusChange }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
 
   return (
@@ -52,6 +53,7 @@ export function BoardColumn({ status, tasks, onAddTask, onEditTask, onDeleteTask
               task={task}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
+              onStatusChange={onStatusChange}
             />
           ))}
         </div>
