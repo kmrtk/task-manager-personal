@@ -45,7 +45,7 @@ public class FolderController {
     @Transactional
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return folderRepository.findById(id).map(folder -> {
+        return folderRepository.findById(id).<ResponseEntity<Void>>map(folder -> {
             LocalDateTime now = LocalDateTime.now();
             List<Task> tasks = taskRepository.findByFolderIdAndDeletedAtIsNull(id);
             tasks.forEach(task -> task.setDeletedAt(now));
@@ -53,6 +53,6 @@ public class FolderController {
             folder.setDeletedAt(now);
             folderRepository.save(folder);
             return ResponseEntity.<Void>noContent().build();
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.<Void>notFound().build());
     }
 }
