@@ -26,18 +26,9 @@ export function BoardColumn({ status, tasks, onAddTask, onEditTask, onDeleteTask
     <div className={`flex flex-col w-72 shrink-0 bg-gray-100 rounded-lg border-t-4 ${COLUMN_COLOR[status]}`}>
       <div className="px-3 pt-3 pb-2 flex items-center justify-between">
         <h2 className="text-sm font-bold text-gray-700">{STATUS_LABEL[status]}</h2>
-        <div className="flex items-center gap-1">
-          <span className="text-xs bg-gray-300 text-gray-600 rounded-full px-2 py-0.5 font-medium">
-            {tasks.length}
-          </span>
-          <button
-            onClick={() => onAddTask(status)}
-            className="text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded px-1.5 py-0.5 text-sm font-bold leading-none transition-colors"
-            title="タスクを追加"
-          >
-            +
-          </button>
-        </div>
+        <span className="text-xs bg-gray-300 text-gray-600 rounded-full px-2 py-0.5 font-medium">
+          {tasks.length}
+        </span>
       </div>
 
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
@@ -56,6 +47,12 @@ export function BoardColumn({ status, tasks, onAddTask, onEditTask, onDeleteTask
               onStatusChange={onStatusChange}
             />
           ))}
+          <button
+            onClick={() => onAddTask(status)}
+            className="mt-1 w-full text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-lg py-2 transition-colors"
+          >
+            + タスク追加
+          </button>
         </div>
       </SortableContext>
     </div>

@@ -76,20 +76,20 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: Props) {
                 title={`優先度: ${PRIORITY_LABEL[task.priority]}`}
               />
             )}
-            <p className="text-sm font-medium text-gray-800 leading-snug">{task.title}</p>
+            <p className="text-base font-medium text-gray-800 leading-snug">{task.title}</p>
           </div>
           {task.description && (
-            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
+            <p className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</p>
           )}
           <div className="mt-2 flex items-center justify-between flex-wrap gap-1">
             {task.dueDate && (
-              <span className={`text-xs ${getDueDateStyle(task.dueDate)}`}>
+              <span className={`text-sm ${getDueDateStyle(task.dueDate)}`}>
                 📅 {task.dueDate}
               </span>
             )}
             <button
               onClick={handleStatusChange}
-              className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-75 transition-opacity ${STATUS_COLOR[task.status]}`}
+              className={`text-sm px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-75 transition-opacity ${STATUS_COLOR[task.status]}`}
               title="クリックでステータスを変更"
             >
               {STATUS_LABEL[task.status]}
@@ -100,7 +100,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: Props) {
               {task.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full"
+                  className="text-sm bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full"
                 >
                   {tag}
                 </span>
@@ -113,14 +113,14 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: Props) {
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
             onClick={handleEdit}
-            className="text-gray-400 hover:text-blue-500 text-xs p-1 rounded hover:bg-gray-100"
+            className="text-gray-400 hover:text-blue-500 text-sm p-1 rounded hover:bg-gray-100"
             title="編集"
           >
             ✏️
           </button>
           <button
             onClick={handleDelete}
-            className="text-gray-400 hover:text-red-500 text-xs p-1 rounded hover:bg-gray-100"
+            className="text-gray-400 hover:text-red-500 text-sm p-1 rounded hover:bg-gray-100"
             title="削除"
           >
             🗑️
