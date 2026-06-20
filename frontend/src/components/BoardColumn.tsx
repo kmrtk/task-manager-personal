@@ -34,9 +34,7 @@ export function BoardColumn({ status, tasks, sortOrder, onSortChange, onAddTask,
           </span>
           <button
             onClick={() =>
-              onSortChange(
-                sortOrder === 'date_asc' ? 'date_desc' : sortOrder === 'date_desc' ? null : 'date_asc'
-              )
+              onSortChange(sortOrder === 'date_asc' ? 'date_desc' : 'date_asc')
             }
             className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
               sortOrder === 'date_asc' || sortOrder === 'date_desc'
@@ -48,9 +46,7 @@ export function BoardColumn({ status, tasks, sortOrder, onSortChange, onAddTask,
           </button>
           <button
             onClick={() =>
-              onSortChange(
-                sortOrder === 'priority_asc' ? 'priority_desc' : sortOrder === 'priority_desc' ? null : 'priority_asc'
-              )
+              onSortChange(sortOrder === 'priority_asc' ? 'priority_desc' : 'priority_asc')
             }
             className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
               sortOrder === 'priority_asc' || sortOrder === 'priority_desc'
