@@ -1,12 +1,14 @@
 package com.taskmanager.controller;
 
 import com.taskmanager.entity.Folder;
+import com.taskmanager.entity.Task;
 import com.taskmanager.repository.FolderRepository;
 import com.taskmanager.repository.TaskRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -24,7 +26,7 @@ public class FolderController {
 
     @GetMapping
     public List<Folder> getAll() {
-        return folderRepository.findAll();
+        return folderRepository.findByDeletedAtIsNull();
     }
 
     @PostMapping
@@ -43,11 +45,14 @@ public class FolderController {
     @Transactional
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!folderRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        taskRepository.deleteByFolderId(id);
-        folderRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return folderRepository.findById(id).map(folder -> {
+            LocalDateTime now = LocalDateTime.now();
+            List<Task> tasks = taskRepository.findByFolderIdAndDeletedAtIsNull(id);
+            tasks.forEach(task -> task.setDeletedAt(now));
+            taskRepository.saveAll(tasks);
+            folder.setDeletedAt(now);
+            folderRepository.save(folder);
+            return ResponseEntity.<Void>noContent().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

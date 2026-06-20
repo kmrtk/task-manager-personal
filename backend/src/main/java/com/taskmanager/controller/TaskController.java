@@ -5,6 +5,7 @@ import com.taskmanager.repository.TaskRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -20,7 +21,7 @@ public class TaskController {
 
     @GetMapping
     public List<Task> getAll() {
-        return taskRepository.findAll();
+        return taskRepository.findByDeletedAtIsNull();
     }
 
     @GetMapping("/{id}")
@@ -33,9 +34,9 @@ public class TaskController {
     @GetMapping("/search")
     public List<Task> search(@RequestParam(defaultValue = "") String q) {
         if (q.isBlank()) {
-            return taskRepository.findAll();
+            return taskRepository.findByDeletedAtIsNull();
         }
-        return taskRepository.findByTitleContainingIgnoreCase(q);
+        return taskRepository.findByTitleContainingIgnoreCaseAndDeletedAtIsNull(q);
     }
 
     @PostMapping
@@ -59,10 +60,10 @@ public class TaskController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!taskRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        taskRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return taskRepository.findById(id).map(task -> {
+            task.setDeletedAt(LocalDateTime.now());
+            taskRepository.save(task);
+            return ResponseEntity.<Void>noContent().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
