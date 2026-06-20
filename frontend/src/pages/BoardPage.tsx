@@ -8,7 +8,7 @@ import {
 } from '@dnd-kit/core'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
-import type { Task, TaskStatus } from '../types/task'
+import type { Task, TaskStatus, SortOrder } from '../types/task'
 import { STATUSES, PRIORITY_ORDER } from '../types/task'
 import { BoardColumn } from '../components/BoardColumn'
 import { SearchBar } from '../components/SearchBar'
@@ -16,7 +16,6 @@ import { TaskModal } from '../components/TaskModal'
 import { updateTaskStatus, deleteTask } from '../api/task'
 
 type TaskMap = Record<TaskStatus, Task[]>
-type SortOrder = 'date_asc' | 'date_desc' | 'priority_asc' | 'priority_desc' | null
 
 function groupByStatus(tasks: Task[]): TaskMap {
   return {
@@ -53,7 +52,11 @@ export function BoardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>({ open: false, defaultStatus: 'TODO' })
-  const [sortOrder, setSortOrder] = useState<SortOrder>(null)
+  const [sortOrder, setSortOrder] = useState<Record<TaskStatus, SortOrder>>({
+    TODO: null,
+    IN_PROGRESS: null,
+    DONE: null,
+  })
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchTasks = useCallback(async (query = '') => {
@@ -202,28 +205,6 @@ export function BoardPage() {
         <h1 className="text-white font-bold text-lg">タスクボード</h1>
         <div className="flex-1" />
         <SearchBar onSearch={handleSearch} />
-        <div className="flex gap-1">
-          {(
-            [
-              { label: '日付↑', value: 'date_asc' },
-              { label: '日付↓', value: 'date_desc' },
-              { label: '優先度↑', value: 'priority_asc' },
-              { label: '優先度↓', value: 'priority_desc' },
-            ] as { label: string; value: SortOrder }[]
-          ).map(({ label, value }) => (
-            <button
-              key={value!}
-              onClick={() => setSortOrder((prev) => (prev === value ? null : value))}
-              className={`text-xs px-2 py-1 rounded font-medium transition-colors ${
-                sortOrder === value
-                  ? 'bg-white text-[#026aa7]'
-                  : 'text-white/80 hover:text-white hover:bg-white/20'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
         <span className="text-white/70 text-sm">{totalCount} 件</span>
         <button
           onClick={() => navigate('/trash')}
@@ -251,7 +232,9 @@ export function BoardPage() {
                 <BoardColumn
                   key={status}
                   status={status}
-                  tasks={sortTasks(taskMap[status], sortOrder)}
+                  tasks={sortTasks(taskMap[status], sortOrder[status])}
+                  sortOrder={sortOrder[status]}
+                  onSortChange={(order) => setSortOrder((prev) => ({ ...prev, [status]: order }))}
                   onAddTask={(s) => setModal({ open: true, defaultStatus: s })}
                   onEditTask={(task) => setModal({ open: true, defaultStatus: task.status, editTask: task })}
                   onDeleteTask={handleDeleteTask}
