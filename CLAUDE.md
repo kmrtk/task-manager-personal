@@ -34,6 +34,34 @@ taskkill /PID {PID番号} /F
 
 ---
 
+## 実装後の再起動ルール（必ず守ること）
+
+実装完了後は、ユーザーがすぐブラウザで動作確認できるよう、Claude が以下を実施してから完了を報告すること。
+
+### フロントエンドの変更がある場合
+```bash
+cd frontend && npm run build
+```
+nginx はボリュームマウントのため、ビルドすれば自動で反映される（nginx の再起動は不要）。
+
+### バックエンドの変更がある場合
+```bash
+# 既存の java プロセスを停止
+taskkill /F /IM java.exe
+
+# バックグラウンドで再起動し、起動完了を待機
+cd backend && ./gradlew bootRun > /tmp/backend.log 2>&1 &
+until curl -s http://localhost:8080/api/tasks > /dev/null 2>&1; do sleep 3; done
+```
+
+### DB（PostgreSQL）について
+Docker で常時起動しているため、通常は再起動不要。
+
+完了報告には「バックエンド・フロントエンド起動済み、http://localhost で確認できます」と明記すること。
+
+---
+
 ## Claude Code への指示
 
 - ポート競合が発生した場合は競合プロセスを停止し、必ず指定ポートで起動すること
+- 実装後は上記の再起動ルールに従い、ユーザーがすぐ動作確認できる状態にすること
