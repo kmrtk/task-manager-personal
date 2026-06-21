@@ -6,13 +6,19 @@ import com.taskmanager.repository.FolderRepository;
 import com.taskmanager.repository.TaskRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/trash")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost")
 public class TrashController {
 
     private final TaskRepository taskRepository;
@@ -33,6 +39,7 @@ public class TrashController {
         return folderRepository.findByDeletedAtIsNotNull();
     }
 
+    @Transactional
     @PostMapping("/tasks/{id}/restore")
     public ResponseEntity<Task> restoreTask(@PathVariable Long id) {
         return taskRepository.findById(id).map(task -> {
@@ -54,6 +61,7 @@ public class TrashController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @Transactional
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<Void> permanentDeleteTask(@PathVariable Long id) {
         if (!taskRepository.existsById(id)) {
